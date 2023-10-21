@@ -228,19 +228,18 @@ uint8_t NRF24L01_Read_Top_Fifo_Width( SPI_HandleTypeDef *hspi )
   * @retval:
            @pRxBuf:数据存放地址首地址
   */
-uint8_t NRF24L01_Read_Rx_Payload(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t *pRxBuf )
+uint8_t NRF24L01_Read_Rx_Payload(NRF24L01_rtx_t *NRF24L01_rtx, NRF24L01_bus_t *NRF24L01_bus )
 {
     uint8_t Width, PipeNum;
-	
     PipeNum = ( NRF24L01_Read_Reg(NRF24L01_rtx->handle, STATUS ) >> 1 ) & 0x07;	//读接收状态
     Width = NRF24L01_Read_Top_Fifo_Width( NRF24L01_rtx->handle);		//读接收数据个数
 
     RF24L01_SET_CS_LOW( );		//片选
-    drv_spi_read_write_byte( NRF24L01_rtx->handle,RD_RX_PLOAD );			//读有效数据命令
+    NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,RD_RX_PLOAD );			//读有效数据命令
 	
     for( PipeNum = 0; PipeNum < Width; PipeNum ++ )
     {
-        *( pRxBuf + PipeNum ) = drv_spi_read_write_byte( NRF24L01_rtx->handle,0xFF );		//读数据
+        *( NRF24L01_bus->RxPacket.Rxbuffer + PipeNum ) = NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,0xFF );		//读数据
     }
     RF24L01_SET_CS_HIGH( );		//取消片选
     NRF24L01_Flush_Rx_Fifo(NRF24L01_rtx->handle );	//清空RX FIFO
@@ -256,19 +255,20 @@ uint8_t NRF24L01_Read_Rx_Payload(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t *pRxBuf )
   * @note  :一次不超过32个字节
   * @retval:无
   */
-void NRF24L01_Write_Tx_Payload_Ack(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t *pTxBuf, uint8_t len )
+void NRF24L01_Write_Tx_Payload_Ack(NRF24L01_rtx_t *NRF24L01_rtx,  NRF24L01_bus_t *NRF24L01_bus)
 {
     uint8_t btmp;
+	  uint8_t len=NRF24L01_bus->TxPacket.Txlength;
     uint8_t length = ( len > 32 ) ? 32 : len;		//数据长达大约32 则只发送32个
 
     NRF24L01_Flush_Tx_Fifo(NRF24L01_rtx->handle);		//清TX FIFO
 	
     RF24L01_SET_CS_LOW( );			//片选
-    drv_spi_read_write_byte(NRF24L01_rtx->handle, WR_TX_PLOAD );	//发送命令
+    NRF24L01_rtx->rtx_cmd(NRF24L01_rtx->handle, WR_TX_PLOAD );	//发送命令
 	
     for( btmp = 0; btmp < length; btmp ++ )
     {
-        drv_spi_read_write_byte(NRF24L01_rtx->handle, *( pTxBuf + btmp ) );	//发送数据
+        NRF24L01_rtx->rtx_cmd(NRF24L01_rtx->handle, *( NRF24L01_bus->TxPacket.Txbuffer + btmp ) );	//发送数据
     }
     RF24L01_SET_CS_HIGH( );			//取消片选
 }
@@ -281,19 +281,20 @@ void NRF24L01_Write_Tx_Payload_Ack(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t *pTxBuf
   * @note  :一次不超过32个字节
   * @retval:无
   */
-void NRF24L01_Write_Tx_Payload_NoAck( NRF24L01_rtx_t *NRF24L01_rtx,uint8_t *pTxBuf, uint8_t len )
+void NRF24L01_Write_Tx_Payload_NoAck( NRF24L01_rtx_t *NRF24L01_rtx, NRF24L01_bus_t *NRF24L01_bus )
 {
+	  uint8_t btmp;
+	  uint8_t len=NRF24L01_bus->TxPacket.Txlength;
     if( len > 32 || len == 0 )
     {
         return ;		//数据长度大于32 或者等于0 不执行
     }
 	
     RF24L01_SET_CS_LOW( );	//片选
-    drv_spi_read_write_byte(  NRF24L01_rtx->handle,WR_TX_PLOAD_NACK );	//发送命令
-    while( len-- )
+    NRF24L01_rtx->rtx_cmd(  NRF24L01_rtx->handle,WR_TX_PLOAD_NACK );	//发送命令
+		for( btmp = 0; btmp < len; btmp ++ )
     {
-        drv_spi_read_write_byte(NRF24L01_rtx->handle, *pTxBuf );			//发送数据
-		    pTxBuf++;
+        NRF24L01_rtx->rtx_cmd(NRF24L01_rtx->handle, *( NRF24L01_bus->TxPacket.Txbuffer + btmp ) );	//写数据
     }
     RF24L01_SET_CS_HIGH( );		//取消片选
 }
@@ -306,17 +307,18 @@ void NRF24L01_Write_Tx_Payload_NoAck( NRF24L01_rtx_t *NRF24L01_rtx,uint8_t *pTxB
   * @note  :一次不超过32个字节
   * @retval:无
   */
-void NRF24L01_Write_Tx_Payload_InAck(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t *pData, uint8_t len )
+void NRF24L01_Write_Tx_Payload_InAck(NRF24L01_rtx_t *NRF24L01_rtx, NRF24L01_bus_t *NRF24L01_bus )
 {
     uint8_t btmp;
+	  uint8_t len=NRF24L01_bus->TxPacket.Txlength;
 	
-	len = ( len > 32 ) ? 32 : len;		//数据长度大于32个则只写32个字节
+  	len = ( len > 32 ) ? 32 : len;		//数据长度大于32个则只写32个字节
 
     RF24L01_SET_CS_LOW( );			//片选
-    drv_spi_read_write_byte(NRF24L01_rtx->handle , W_ACK_PLOAD );		//命令
+    NRF24L01_rtx->rtx_cmd(NRF24L01_rtx->handle , W_ACK_PLOAD );		//命令
     for( btmp = 0; btmp < len; btmp ++ )
     {
-        drv_spi_read_write_byte(NRF24L01_rtx->handle, *( pData + btmp ) );	//写数据
+        NRF24L01_rtx->rtx_cmd(NRF24L01_rtx->handle, *( NRF24L01_bus->TxPacket.Txbuffer + btmp ) );	//写数据
     }
     RF24L01_SET_CS_HIGH( );			//取消片选
 }
@@ -500,17 +502,17 @@ void RF24L01_Set_Mode(SPI_HandleTypeDef *hspi, nRf24l01ModeType Mode )
   *			TX_OK：发送完成
   *			0xFF:其他原因
   */ 
-uint8_t NRF24L01_TxPacket(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t *txbuf, uint8_t Length )
+uint8_t NRF24L01_TxPacket(NRF24L01_rtx_t *NRF24L01_rtx,NRF24L01_bus_t *NRF24L01_bus )
 {
 	uint8_t l_Status = 0;
 	uint16_t l_MsTimes = 0;
 	
 	RF24L01_SET_CS_LOW( );		//片选
-	drv_spi_read_write_byte(NRF24L01_rtx->handle, FLUSH_TX );
+	NRF24L01_rtx->rtx_cmd(NRF24L01_rtx->handle, FLUSH_TX );
 	RF24L01_SET_CS_HIGH( );
 	
 	RF24L01_SET_CE_LOW( );		
-	NRF24L01_Write_Buf(NRF24L01_rtx->handle, WR_TX_PLOAD, txbuf, Length );	//写数据到TX BUF 32字节  TX_PLOAD_WIDTH
+	NRF24L01_Write_Buf(NRF24L01_rtx->handle, WR_TX_PLOAD,NRF24L01_bus->TxPacket.Txbuffer, NRF24L01_bus->TxPacket.Txlength);	//写数据到TX BUF 32字节  TX_PLOAD_WIDTH
 	RF24L01_SET_CE_HIGH( );			//启动发送
 	while( 0 != RF24L01_GET_IRQ_STATUS())
 	{
@@ -545,12 +547,12 @@ uint8_t NRF24L01_TxPacket(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t *txbuf, uint8_t 
   * @note  :无
   * @retval:接收的数据个数
   */ 
-uint8_t NRF24L01_RxPacket(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t *rxbuf )
+uint8_t NRF24L01_RxPacket(NRF24L01_rtx_t *NRF24L01_rtx, NRF24L01_bus_t *NRF24L01_bus )
 {
 	uint8_t l_Status = 0, l_RxLength = 0, l_100MsTimes = 0;
 	
 	RF24L01_SET_CS_LOW( );		//片选
-	drv_spi_read_write_byte(NRF24L01_rtx->handle, FLUSH_RX );
+	NRF24L01_rtx->rtx_cmd(NRF24L01_rtx->handle, FLUSH_RX );
 	RF24L01_SET_CS_HIGH( );
 	
 	while( 0 != RF24L01_GET_IRQ_STATUS())
@@ -570,7 +572,7 @@ uint8_t NRF24L01_RxPacket(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t *rxbuf )
 	if( l_Status & RX_OK)	//接收到数据
 	{
 		l_RxLength = NRF24L01_Read_Reg(NRF24L01_rtx->handle, R_RX_PL_WID );		//读取接收到的数据个数
-		NRF24L01_Read_Buf(NRF24L01_rtx->handle, RD_RX_PLOAD,rxbuf,l_RxLength );	//接收到数据 
+		NRF24L01_Read_Buf(NRF24L01_rtx->handle, RD_RX_PLOAD,NRF24L01_bus->RxPacket.Rxbuffer,l_RxLength );	//接收到数据 
 		NRF24L01_Write_Reg(NRF24L01_rtx->handle, FLUSH_RX,0xff );				//清除RX FIFO
 		return l_RxLength; 
 	}	
