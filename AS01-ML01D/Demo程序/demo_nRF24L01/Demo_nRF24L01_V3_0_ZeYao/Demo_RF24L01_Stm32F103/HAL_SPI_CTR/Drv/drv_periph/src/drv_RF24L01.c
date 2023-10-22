@@ -179,14 +179,14 @@ uint8_t NRF24L01_Clear_IRQ_Flag(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t IRQ_Source
     uint8_t btmp = 0;
 
     IRQ_Source &= ( 1 << RX_DR ) | ( 1 << TX_DS ) | ( 1 << MAX_RT );	//中断标志处理
-    btmp = NRF24L01_Read_Status_Register( NRF24L01_rtx->handle);			//读状态寄存器
+    btmp = NRF24L01_Read_Status_Register( NRF24L01_rtx);			//读状态寄存器
 		
 	  RF24L01_SET_CS_LOW( );		//片选
     NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,NRF_WRITE_REG + STATUS );	//写状态寄存器命令
     NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,IRQ_Source | btmp );		//清相应中断标志
 	  RF24L01_SET_CS_HIGH( );		//取消片选
 	
-    return ( NRF24L01_Read_Status_Register(NRF24L01_rtx->handle ));			//返回状态寄存器状态
+    return ( NRF24L01_Read_Status_Register(NRF24L01_rtx));			//返回状态寄存器状态
 }
 
 /**
@@ -197,7 +197,7 @@ uint8_t NRF24L01_Clear_IRQ_Flag(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t IRQ_Source
   */
 uint8_t RF24L01_Read_IRQ_Status( NRF24L01_rtx_t *NRF24L01_rtx )
 {
-    return ( NRF24L01_Read_Status_Register( NRF24L01_rtx->handle) & (( 1 << RX_DR ) | ( 1 << TX_DS ) | ( 1 << MAX_RT )));	//返回中断状态
+    return ( NRF24L01_Read_Status_Register( NRF24L01_rtx) & (( 1 << RX_DR ) | ( 1 << TX_DS ) | ( 1 << MAX_RT )));	//返回中断状态
 }
  
  /**
@@ -230,8 +230,8 @@ uint8_t NRF24L01_Read_Top_Fifo_Width( NRF24L01_rtx_t *NRF24L01_rtx  )
 uint8_t NRF24L01_Read_Rx_Payload(NRF24L01_rtx_t *NRF24L01_rtx, NRF24L01_bus_t *NRF24L01_bus )
 {
     uint8_t Width, PipeNum;
-    PipeNum = ( NRF24L01_Read_Reg(NRF24L01_rtx->handle, STATUS ) >> 1 ) & 0x07;	//读接收状态
-    Width = NRF24L01_Read_Top_Fifo_Width( NRF24L01_rtx->handle);		//读接收数据个数
+    PipeNum = ( NRF24L01_Read_Reg(NRF24L01_rtx, STATUS ) >> 1 ) & 0x07;	//读接收状态
+    Width = NRF24L01_Read_Top_Fifo_Width( NRF24L01_rtx);		//读接收数据个数
 
     RF24L01_SET_CS_LOW( );		//片选
     NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,RD_RX_PLOAD );			//读有效数据命令
@@ -241,7 +241,7 @@ uint8_t NRF24L01_Read_Rx_Payload(NRF24L01_rtx_t *NRF24L01_rtx, NRF24L01_bus_t *N
         *( NRF24L01_bus->RxPacket.Rxbuffer + PipeNum ) = NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,0xFF );		//读数据
     }
     RF24L01_SET_CS_HIGH( );		//取消片选
-    NRF24L01_Flush_Rx_Fifo(NRF24L01_rtx->handle );	//清空RX FIFO
+    NRF24L01_Flush_Rx_Fifo(NRF24L01_rtx );	//清空RX FIFO
 	
     return Width;
 }
@@ -260,7 +260,7 @@ void NRF24L01_Write_Tx_Payload_Ack(NRF24L01_rtx_t *NRF24L01_rtx,  NRF24L01_bus_t
 	  uint8_t len=NRF24L01_bus->TxPacket.Txlength;
     uint8_t length = ( len > 32 ) ? 32 : len;		//数据长达大约32 则只发送32个
 
-    NRF24L01_Flush_Tx_Fifo(NRF24L01_rtx->handle);		//清TX FIFO
+    NRF24L01_Flush_Tx_Fifo(NRF24L01_rtx);		//清TX FIFO
 	
     RF24L01_SET_CS_LOW( );			//片选
     NRF24L01_rtx->rtx_cmd(NRF24L01_rtx->handle, WR_TX_PLOAD );	//发送命令
@@ -511,24 +511,24 @@ uint8_t NRF24L01_TxPacket(NRF24L01_rtx_t *NRF24L01_rtx,NRF24L01_bus_t *NRF24L01_
 	RF24L01_SET_CS_HIGH( );
 	
 	RF24L01_SET_CE_LOW( );		
-	NRF24L01_Write_Buf(NRF24L01_rtx->handle, WR_TX_PLOAD,NRF24L01_bus->TxPacket.Txbuffer, NRF24L01_bus->TxPacket.Txlength);	//写数据到TX BUF 32字节  TX_PLOAD_WIDTH
+	NRF24L01_Write_Buf(NRF24L01_rtx, WR_TX_PLOAD,NRF24L01_bus->TxPacket.Txbuffer, NRF24L01_bus->TxPacket.Txlength);	//写数据到TX BUF 32字节  TX_PLOAD_WIDTH
 	RF24L01_SET_CE_HIGH( );			//启动发送
 	while( 0 != RF24L01_GET_IRQ_STATUS())
 	{
 		HAL_Delay(1);
 		if( 500 == l_MsTimes++ )						//500ms还没有发送成功，重新初始化设备
 		{
-			RF24L01_Init(NRF24L01_rtx->handle );
-			RF24L01_Set_Mode(NRF24L01_rtx->handle, MODE_TX );
+			RF24L01_Init(NRF24L01_rtx);
+			RF24L01_Set_Mode(NRF24L01_rtx, MODE_TX );
 			break;
 		}
 	}
-	l_Status = NRF24L01_Read_Reg(NRF24L01_rtx->handle,STATUS);						//读状态寄存器
-	NRF24L01_Write_Reg(NRF24L01_rtx->handle, STATUS, l_Status );						//清除TX_DS或MAX_RT中断标志
+	l_Status = NRF24L01_Read_Reg(NRF24L01_rtx,STATUS);						//读状态寄存器
+	NRF24L01_Write_Reg(NRF24L01_rtx, STATUS, l_Status );						//清除TX_DS或MAX_RT中断标志
 	
 	if( l_Status & MAX_TX )	//达到最大重发次数
 	{
-		NRF24L01_Write_Reg(NRF24L01_rtx->handle, FLUSH_TX,0xff );	//清除TX FIFO寄存器
+		NRF24L01_Write_Reg(NRF24L01_rtx, FLUSH_TX,0xff );	//清除TX FIFO寄存器
 		return MAX_TX; 
 	}
 	if( l_Status & TX_OK )	//发送完成
@@ -560,19 +560,19 @@ uint8_t NRF24L01_RxPacket(NRF24L01_rtx_t *NRF24L01_rtx, NRF24L01_bus_t *NRF24L01
 		
 		if( 30 == l_100MsTimes++ )		//3s没接收过数据，重新初始化模块
 		{
-			RF24L01_Init(NRF24L01_rtx->handle );
-			RF24L01_Set_Mode(NRF24L01_rtx->handle, MODE_RX );
+			RF24L01_Init(NRF24L01_rtx);
+			RF24L01_Set_Mode(NRF24L01_rtx, MODE_RX );
 			break;
 		}
 	}
 	
-	l_Status = NRF24L01_Read_Reg(NRF24L01_rtx->handle, STATUS );		//读状态寄存器
-	NRF24L01_Write_Reg(NRF24L01_rtx->handle, STATUS,l_Status );		//清中断标志
+	l_Status = NRF24L01_Read_Reg(NRF24L01_rtx, STATUS );		//读状态寄存器
+	NRF24L01_Write_Reg(NRF24L01_rtx, STATUS,l_Status );		//清中断标志
 	if( l_Status & RX_OK)	//接收到数据
 	{
-		l_RxLength = NRF24L01_Read_Reg(NRF24L01_rtx->handle, R_RX_PL_WID );		//读取接收到的数据个数
-		NRF24L01_Read_Buf(NRF24L01_rtx->handle, RD_RX_PLOAD,NRF24L01_bus->RxPacket.Rxbuffer,l_RxLength );	//接收到数据 
-		NRF24L01_Write_Reg(NRF24L01_rtx->handle, FLUSH_RX,0xff );				//清除RX FIFO
+		l_RxLength = NRF24L01_Read_Reg(NRF24L01_rtx, R_RX_PL_WID );		//读取接收到的数据个数
+		NRF24L01_Read_Buf(NRF24L01_rtx, RD_RX_PLOAD,NRF24L01_bus->RxPacket.Rxbuffer,l_RxLength );	//接收到数据 
+		NRF24L01_Write_Reg(NRF24L01_rtx, FLUSH_RX,0xff );				//清除RX FIFO
 		return l_RxLength; 
 	}	
 	
