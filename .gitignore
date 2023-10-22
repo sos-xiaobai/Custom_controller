@@ -1,4 +1,5 @@
 *.rar
+*.zip
 *.o
 *.d
 *.crf
@@ -20,7 +21,8 @@
 RTE/
 Templates/
 Examples/
- 
+AS01 ML01DP5/
+
 !*.uvprojx
 !*.h
 !*.c
@@ -28,6 +30,7 @@ Examples/
 !*.axf
 !*.bin
 !*.hex
-*.o
-
+!as06_vtb01.zip
+!nRF24L01P-EK.zip
+!Software examples using ShockBurst modes in nRF24L01 and nRF24LU12.zip
 
