@@ -226,32 +226,32 @@ typedef struct rtx_t
 
 
 
-uint8_t NRF24L01_Read_Reg(SPI_HandleTypeDef *hspi , uint8_t RegAddr );
-void NRF24L01_Read_Buf(SPI_HandleTypeDef *hspi , uint8_t RegAddr, uint8_t *pBuf, uint8_t len );
-void NRF24L01_Write_Reg(SPI_HandleTypeDef *hspi , uint8_t RegAddr, uint8_t Value );
-void NRF24L01_Write_Buf(SPI_HandleTypeDef *hspi , uint8_t RegAddr, uint8_t *pBuf, uint8_t len );
-void NRF24L01_Flush_Tx_Fifo ( SPI_HandleTypeDef *hspi  );
-void NRF24L01_Flush_Rx_Fifo( SPI_HandleTypeDef *hspi  );
-void NRF24L01_Reuse_Tx_Payload( SPI_HandleTypeDef *hspi  );
-void NRF24L01_Nop( SPI_HandleTypeDef *hspi  );
-uint8_t NRF24L01_Read_Status_Register( SPI_HandleTypeDef *hspi);
-uint8_t NRF24L01_Clear_IRQ_Flag(SPI_HandleTypeDef *hspi , uint8_t IRQ_Source );
-uint8_t RF24L01_Read_IRQ_Status( SPI_HandleTypeDef *hspi );
-uint8_t NRF24L01_Read_Top_Fifo_Width( SPI_HandleTypeDef *hspi );
+uint8_t NRF24L01_Read_Reg(NRF24L01_rtx_t *NRF24L01_rtx , uint8_t RegAddr );
+void NRF24L01_Read_Buf(NRF24L01_rtx_t *NRF24L01_rtx , uint8_t RegAddr, uint8_t *pBuf, uint8_t len );
+void NRF24L01_Write_Reg(NRF24L01_rtx_t *NRF24L01_rtx , uint8_t RegAddr, uint8_t Value );
+void NRF24L01_Write_Buf(NRF24L01_rtx_t *NRF24L01_rtx , uint8_t RegAddr, uint8_t *pBuf, uint8_t len );
+void NRF24L01_Flush_Tx_Fifo ( NRF24L01_rtx_t *NRF24L01_rtx  );
+void NRF24L01_Flush_Rx_Fifo( NRF24L01_rtx_t *NRF24L01_rtx  );
+void NRF24L01_Reuse_Tx_Payload( NRF24L01_rtx_t *NRF24L01_rtx  );
+void NRF24L01_Nop( NRF24L01_rtx_t *NRF24L01_rtx  );
+uint8_t NRF24L01_Read_Status_Register( NRF24L01_rtx_t *NRF24L01_rtx);
+uint8_t NRF24L01_Clear_IRQ_Flag(NRF24L01_rtx_t *NRF24L01_rtx , uint8_t IRQ_Source );
+uint8_t RF24L01_Read_IRQ_Status( NRF24L01_rtx_t *NRF24L01_rtx );
+uint8_t NRF24L01_Read_Top_Fifo_Width( NRF24L01_rtx_t *NRF24L01_rtx );
 uint8_t NRF24L01_Read_Rx_Payload(NRF24L01_rtx_t *NRF24L01_rtx, NRF24L01_bus_t *NRF24L01_bus );
 void NRF24L01_Write_Tx_Payload_Ack( NRF24L01_rtx_t *NRF24L01_rtx, NRF24L01_bus_t *NRF24L01_bus);
 void NRF24L01_Write_Tx_Payload_NoAck(NRF24L01_rtx_t *NRF24L01_rtx, NRF24L01_bus_t *NRF24L01_bus );
 void NRF24L01_Write_Tx_Payload_InAck(NRF24L01_rtx_t *NRF24L01_rtx,  NRF24L01_bus_t *NRF24L01_bus );
-void NRF24L01_Set_TxAddr(SPI_HandleTypeDef *hspi , uint8_t *pAddr, uint8_t len );
-void NRF24L01_Set_RxAddr(SPI_HandleTypeDef *hspi , uint8_t PipeNum, uint8_t *pAddr, uint8_t Len );
-void NRF24L01_Set_Speed(SPI_HandleTypeDef *hspi , nRf24l01SpeedType Speed );
-void NRF24L01_Set_Power(SPI_HandleTypeDef *hspi , nRf24l01PowerType Power );
-void RF24LL01_Write_Hopping_Point(SPI_HandleTypeDef *hspi , uint8_t FreqPoint );
-void RF24L01_Set_Mode(SPI_HandleTypeDef *hspi , nRf24l01ModeType Mode );
-void  NRF24L01_check( SPI_HandleTypeDef *hspi );
+void NRF24L01_Set_TxAddr(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t *pAddr, uint8_t len );
+void NRF24L01_Set_RxAddr(NRF24L01_rtx_t *NRF24L01_rtx , uint8_t PipeNum, uint8_t *pAddr, uint8_t Len );
+void NRF24L01_Set_Speed(NRF24L01_rtx_t *NRF24L01_rtx, nRf24l01SpeedType Speed );
+void NRF24L01_Set_Power(NRF24L01_rtx_t *NRF24L01_rtx, nRf24l01PowerType Power );
+void RF24LL01_Write_Hopping_Point(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t FreqPoint );
+void RF24L01_Set_Mode(NRF24L01_rtx_t *NRF24L01_rtx, nRf24l01ModeType Mode );
+void  NRF24L01_check( NRF24L01_rtx_t *NRF24L01_rtx);
 uint8_t NRF24L01_TxPacket(NRF24L01_rtx_t *NRF24L01_rtx, NRF24L01_bus_t *NRF24L01_bus );
 uint8_t NRF24L01_RxPacket(NRF24L01_rtx_t *NRF24L01_rtx, NRF24L01_bus_t *NRF24L01_bus );
-void RF24L01_Init( SPI_HandleTypeDef *hspi );
+void RF24L01_Init( NRF24L01_rtx_t *NRF24L01_rtx );
 void RF24L01_Port_Init( void );
 
 #endif

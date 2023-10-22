@@ -28,12 +28,12 @@ NRF24L01_rtx_t  NRF24L01_rtx;
   * @note  :地址在设备中有效
   * @retval:读取的数据
   */
-uint8_t NRF24L01_Read_Reg(SPI_HandleTypeDef *hspi, uint8_t RegAddr )
+uint8_t NRF24L01_Read_Reg(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t RegAddr )
 {
     uint8_t btmp;
 	RF24L01_SET_CS_LOW( );		//片选
-    drv_spi_read_write_byte( hspi,NRF_READ_REG | RegAddr );	//读命令 地址
-    btmp = drv_spi_read_write_byte( hspi,0xFF );				//读数据
+    NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,NRF_READ_REG | RegAddr );	//读命令 地址
+    btmp = NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,0xFF );				//读数据
 	 RF24L01_SET_CS_HIGH( );		//取消片选
     return btmp;
 }
@@ -47,16 +47,16 @@ uint8_t NRF24L01_Read_Reg(SPI_HandleTypeDef *hspi, uint8_t RegAddr )
   * @note  :数据长度不超过255，地址在设备中有效
   * @retval:读取状态
   */
-void NRF24L01_Read_Buf(SPI_HandleTypeDef *hspi ,uint8_t RegAddr, uint8_t *pBuf, uint8_t len )
+void NRF24L01_Read_Buf(NRF24L01_rtx_t *NRF24L01_rtx,uint8_t RegAddr, uint8_t *pBuf, uint8_t len )
 {
     uint8_t btmp;
 	
     RF24L01_SET_CS_LOW( );			//片选
 	
-    drv_spi_read_write_byte( hspi,NRF_READ_REG | RegAddr );	//读命令 地址
+    NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,NRF_READ_REG | RegAddr );	//读命令 地址
     for( btmp = 0; btmp < len; btmp ++ )
     {
-        *( pBuf + btmp ) = drv_spi_read_write_byte( hspi,0xFF );	//读数据
+        *( pBuf + btmp ) = NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,0xFF );	//读数据
     }
     RF24L01_SET_CS_HIGH( );		//取消片选
 }
@@ -67,12 +67,12 @@ void NRF24L01_Read_Buf(SPI_HandleTypeDef *hspi ,uint8_t RegAddr, uint8_t *pBuf, 
   * @note  :地址在设备中有效
   * @retval:读写状态
   */
-void NRF24L01_Write_Reg(SPI_HandleTypeDef *hspi ,uint8_t RegAddr, uint8_t Value )
+void NRF24L01_Write_Reg(NRF24L01_rtx_t *NRF24L01_rtx ,uint8_t RegAddr, uint8_t Value )
 {
     RF24L01_SET_CS_LOW( );		//片选
 	
-    drv_spi_read_write_byte( hspi,NRF_WRITE_REG | RegAddr );	//写命令 地址
-    drv_spi_read_write_byte( hspi,Value );			//写数据
+    NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,NRF_WRITE_REG | RegAddr );	//写命令 地址
+    NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,Value );			//写数据
 	  
     RF24L01_SET_CS_HIGH( );		//取消片选
 	  
@@ -87,14 +87,14 @@ void NRF24L01_Write_Reg(SPI_HandleTypeDef *hspi ,uint8_t RegAddr, uint8_t Value 
   * @note  :数据长度不超过255，地址在设备中有效
   * @retval:写状态
   */
-void NRF24L01_Write_Buf(SPI_HandleTypeDef *hspi ,uint8_t RegAddr, uint8_t *pBuf, uint8_t len )
+void NRF24L01_Write_Buf(NRF24L01_rtx_t *NRF24L01_rtx ,uint8_t RegAddr, uint8_t *pBuf, uint8_t len )
 {
     uint8_t i;
     RF24L01_SET_CS_LOW( );		//片选
-    drv_spi_read_write_byte( hspi,NRF_WRITE_REG | RegAddr );	//写命令 地址
+    NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,NRF_WRITE_REG | RegAddr );	//写命令 地址
     for( i = 0; i < len; i ++ )
     {
-        drv_spi_read_write_byte( hspi,*( pBuf + i ) );		//写数据
+        NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,*( pBuf + i ) );		//写数据
     }
 		RF24L01_SET_CS_HIGH( );		//取消片选
 }
@@ -105,10 +105,10 @@ void NRF24L01_Write_Buf(SPI_HandleTypeDef *hspi ,uint8_t RegAddr, uint8_t *pBuf,
   * @note  :无
   * @retval:无
   */
-void NRF24L01_Flush_Tx_Fifo ( SPI_HandleTypeDef *hspi )
+void NRF24L01_Flush_Tx_Fifo ( NRF24L01_rtx_t *NRF24L01_rtx )
 {
 	RF24L01_SET_CS_LOW( );		//片选
-    drv_spi_read_write_byte( hspi,FLUSH_TX );	//清TX FIFO命令
+    NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,FLUSH_TX );	//清TX FIFO命令
 	RF24L01_SET_CS_HIGH( );		//取消片选
 }
 
@@ -118,11 +118,10 @@ void NRF24L01_Flush_Tx_Fifo ( SPI_HandleTypeDef *hspi )
   * @note  :无
   * @retval:无
   */
-void NRF24L01_Flush_Rx_Fifo( SPI_HandleTypeDef *hspi )
+void NRF24L01_Flush_Rx_Fifo( NRF24L01_rtx_t *NRF24L01_rtx )
 {
 	    RF24L01_SET_CS_LOW( );		//片选
-    
-    drv_spi_read_write_byte( hspi,FLUSH_RX );	//清RX FIFO命令
+    NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,FLUSH_RX );	//清RX FIFO命令
 	RF24L01_SET_CS_HIGH( );		//取消片选
 }
 
@@ -132,10 +131,10 @@ void NRF24L01_Flush_Rx_Fifo( SPI_HandleTypeDef *hspi )
   * @note  :无
   * @retval:无
   */
-void NRF24L01_Reuse_Tx_Payload( SPI_HandleTypeDef *hspi )
+void NRF24L01_Reuse_Tx_Payload( NRF24L01_rtx_t *NRF24L01_rtx )
 {
 	  RF24L01_SET_CS_LOW( );		//片选
-    drv_spi_read_write_byte( hspi,REUSE_TX_PL );		//重新使用上一包命令
+    NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,REUSE_TX_PL );		//重新使用上一包命令
 	  RF24L01_SET_CS_HIGH( );		//取消片选
 }
 
@@ -145,10 +144,10 @@ void NRF24L01_Reuse_Tx_Payload( SPI_HandleTypeDef *hspi )
   * @note  :无
   * @retval:无
   */
-void NRF24L01_Nop( SPI_HandleTypeDef *hspi )
+void NRF24L01_Nop(NRF24L01_rtx_t *NRF24L01_rtx)
 {
 	  RF24L01_SET_CS_LOW( );		//取消片选
-    drv_spi_read_write_byte( hspi,NOP );		//空操作命令
+    NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,NOP );		//空操作命令
 	  RF24L01_SET_CS_HIGH( );		//取消片选
 }
 
@@ -159,11 +158,11 @@ void NRF24L01_Nop( SPI_HandleTypeDef *hspi )
   * @note  :无
   * @retval:RF24L01状态
   */
-uint8_t NRF24L01_Read_Status_Register( SPI_HandleTypeDef *hspi )
+uint8_t NRF24L01_Read_Status_Register(NRF24L01_rtx_t *NRF24L01_rtx )
 {
     uint8_t Status;
 	  RF24L01_SET_CS_LOW( );		//片选
-    Status = drv_spi_read_write_byte(hspi, NRF_READ_REG + STATUS );	//读状态寄存器
+    Status = NRF24L01_rtx->rtx_cmd(NRF24L01_rtx->handle, NRF_READ_REG + STATUS );	//读状态寄存器
 	  RF24L01_SET_CS_HIGH( );		//取消片选
     return Status;
 }
@@ -175,19 +174,19 @@ uint8_t NRF24L01_Read_Status_Register( SPI_HandleTypeDef *hspi )
   * @note  :无
   * @retval:清除后状态寄存器的值
   */
-uint8_t NRF24L01_Clear_IRQ_Flag(SPI_HandleTypeDef *hspi, uint8_t IRQ_Source )
+uint8_t NRF24L01_Clear_IRQ_Flag(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t IRQ_Source )
 {
     uint8_t btmp = 0;
 
     IRQ_Source &= ( 1 << RX_DR ) | ( 1 << TX_DS ) | ( 1 << MAX_RT );	//中断标志处理
-    btmp = NRF24L01_Read_Status_Register( hspi);			//读状态寄存器
+    btmp = NRF24L01_Read_Status_Register( NRF24L01_rtx->handle);			//读状态寄存器
 		
 	  RF24L01_SET_CS_LOW( );		//片选
-    drv_spi_read_write_byte( hspi,NRF_WRITE_REG + STATUS );	//写状态寄存器命令
-    drv_spi_read_write_byte( hspi,IRQ_Source | btmp );		//清相应中断标志
+    NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,NRF_WRITE_REG + STATUS );	//写状态寄存器命令
+    NRF24L01_rtx->rtx_cmd( NRF24L01_rtx->handle,IRQ_Source | btmp );		//清相应中断标志
 	  RF24L01_SET_CS_HIGH( );		//取消片选
 	
-    return ( NRF24L01_Read_Status_Register(hspi ));			//返回状态寄存器状态
+    return ( NRF24L01_Read_Status_Register(NRF24L01_rtx->handle ));			//返回状态寄存器状态
 }
 
 /**
@@ -196,9 +195,9 @@ uint8_t NRF24L01_Clear_IRQ_Flag(SPI_HandleTypeDef *hspi, uint8_t IRQ_Source )
   * @note  :无
   * @retval:中断状态
   */
-uint8_t RF24L01_Read_IRQ_Status( SPI_HandleTypeDef *hspi )
+uint8_t RF24L01_Read_IRQ_Status( NRF24L01_rtx_t *NRF24L01_rtx )
 {
-    return ( NRF24L01_Read_Status_Register( hspi) & (( 1 << RX_DR ) | ( 1 << TX_DS ) | ( 1 << MAX_RT )));	//返回中断状态
+    return ( NRF24L01_Read_Status_Register( NRF24L01_rtx->handle) & (( 1 << RX_DR ) | ( 1 << TX_DS ) | ( 1 << MAX_RT )));	//返回中断状态
 }
  
  /**
@@ -207,14 +206,14 @@ uint8_t RF24L01_Read_IRQ_Status( SPI_HandleTypeDef *hspi )
   * @note  :无
   * @retval:数据宽度
   */
-uint8_t NRF24L01_Read_Top_Fifo_Width( SPI_HandleTypeDef *hspi )
+uint8_t NRF24L01_Read_Top_Fifo_Width( NRF24L01_rtx_t *NRF24L01_rtx  )
 {
     uint8_t btmp;
 	
     RF24L01_SET_CS_LOW( );		//片选
 	
-    drv_spi_read_write_byte(hspi, R_RX_PL_WID );	//读FIFO中数据宽度命令
-    btmp = drv_spi_read_write_byte(hspi, 0xFF );	//读数据
+    NRF24L01_rtx->rtx_cmd(NRF24L01_rtx->handle, R_RX_PL_WID );	//读FIFO中数据宽度命令
+    btmp = NRF24L01_rtx->rtx_cmd(NRF24L01_rtx->handle, 0xFF );	//读数据
 	
     RF24L01_SET_CS_HIGH( );		//取消片选
 	
@@ -331,10 +330,10 @@ void NRF24L01_Write_Tx_Payload_InAck(NRF24L01_rtx_t *NRF24L01_rtx, NRF24L01_bus_
   * @note  :无
   * @retval:无
   */
-void NRF24L01_Set_TxAddr(SPI_HandleTypeDef *hspi, uint8_t *pAddr, uint8_t len )
+void NRF24L01_Set_TxAddr(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t *pAddr, uint8_t len )
 {
 	len = ( len > 5 ) ? 5 : len;					//地址不能大于5个字节
-    NRF24L01_Write_Buf(hspi, TX_ADDR, pAddr, len );	//写地址
+    NRF24L01_Write_Buf(NRF24L01_rtx, TX_ADDR, pAddr, len );	//写地址
 }
 
  /**
@@ -346,12 +345,12 @@ void NRF24L01_Set_TxAddr(SPI_HandleTypeDef *hspi, uint8_t *pAddr, uint8_t len )
   * @note  :通道不大于5 地址长度不大于5个字节
   * @retval:无
   */
-void NRF24L01_Set_RxAddr(SPI_HandleTypeDef *hspi, uint8_t PipeNum, uint8_t *pAddr, uint8_t Len )
+void NRF24L01_Set_RxAddr(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t PipeNum, uint8_t *pAddr, uint8_t Len )
 {
     Len = ( Len > 5 ) ? 5 : Len;
     PipeNum = ( PipeNum > 5 ) ? 5 : PipeNum;		//通道不大于5 地址长度不大于5个字节
 
-    NRF24L01_Write_Buf(hspi, RX_ADDR_P0 + PipeNum, pAddr, Len );	//写入地址
+    NRF24L01_Write_Buf(NRF24L01_rtx, RX_ADDR_P0 + PipeNum, pAddr, Len );	//写入地址
 }
 
  /**
@@ -361,11 +360,11 @@ void NRF24L01_Set_RxAddr(SPI_HandleTypeDef *hspi, uint8_t PipeNum, uint8_t *pAdd
   * @note  :无
   * @retval:无
   */
-void NRF24L01_Set_Speed(SPI_HandleTypeDef *hspi, nRf24l01SpeedType Speed )
+void NRF24L01_Set_Speed(NRF24L01_rtx_t *NRF24L01_rtx, nRf24l01SpeedType Speed )
 {
 	uint8_t btmp = 0;
 	
-	btmp = NRF24L01_Read_Reg(hspi, RF_SETUP );
+	btmp = NRF24L01_Read_Reg(NRF24L01_rtx, RF_SETUP );
 	btmp &= ~( ( 1<<5 ) | ( 1<<3 ) );
 	
 	if( Speed == SPEED_250K )		//250K
@@ -381,7 +380,7 @@ void NRF24L01_Set_Speed(SPI_HandleTypeDef *hspi, nRf24l01SpeedType Speed )
 		btmp |= ( 1<<3 );
 	}
 
-	NRF24L01_Write_Reg(hspi, RF_SETUP, btmp );
+	NRF24L01_Write_Reg(NRF24L01_rtx, RF_SETUP, btmp );
 }
 
  /**
@@ -391,11 +390,11 @@ void NRF24L01_Set_Speed(SPI_HandleTypeDef *hspi, nRf24l01SpeedType Speed )
   * @note  :无
   * @retval:无
   */
-void NRF24L01_Set_Power(SPI_HandleTypeDef *hspi, nRf24l01PowerType Power )
+void NRF24L01_Set_Power(NRF24L01_rtx_t *NRF24L01_rtx, nRf24l01PowerType Power )
 {
     uint8_t btmp;
 	
-	btmp = NRF24L01_Read_Reg(hspi, RF_SETUP ) & ~0x07;
+	btmp = NRF24L01_Read_Reg(NRF24L01_rtx, RF_SETUP ) & ~0x07;
     switch( Power )
     {
         case POWER_F18DBM:
@@ -413,7 +412,7 @@ void NRF24L01_Set_Power(SPI_HandleTypeDef *hspi, nRf24l01PowerType Power )
         default:
             break;
     }
-    NRF24L01_Write_Reg(hspi, RF_SETUP, btmp );
+    NRF24L01_Write_Reg(NRF24L01_rtx, RF_SETUP, btmp );
 }
 
  /**
@@ -423,9 +422,9 @@ void NRF24L01_Set_Power(SPI_HandleTypeDef *hspi, nRf24l01PowerType Power )
   * @note  :值不大于127
   * @retval:无
   */
-void RF24LL01_Write_Hopping_Point(SPI_HandleTypeDef *hspi, uint8_t FreqPoint )
+void RF24LL01_Write_Hopping_Point(NRF24L01_rtx_t *NRF24L01_rtx, uint8_t FreqPoint )
 {
-    NRF24L01_Write_Reg( hspi, RF_CH, FreqPoint & 0x7F );
+    NRF24L01_Write_Reg( NRF24L01_rtx, RF_CH, FreqPoint & 0x7F );
 }
 
 /**
@@ -434,7 +433,7 @@ void RF24LL01_Write_Hopping_Point(SPI_HandleTypeDef *hspi, uint8_t FreqPoint )
   * @note  :无
   * @retval:无
   */ 
-void NRF24L01_check( SPI_HandleTypeDef *hspi )
+void NRF24L01_check( NRF24L01_rtx_t *NRF24L01_rtx )
 {
 	uint8_t i;
 	uint8_t buf[5]={ 0XA5, 0XA5, 0XA5, 0XA5, 0XA5 };
@@ -442,8 +441,8 @@ void NRF24L01_check( SPI_HandleTypeDef *hspi )
 	 
 	while( 1 )
 	{
-		NRF24L01_Write_Buf(hspi, TX_ADDR, buf, 5 );			//写入5个字节的地址
-		NRF24L01_Read_Buf(hspi, TX_ADDR, read_buf, 5 );		//读出写入的地址  
+		NRF24L01_Write_Buf(NRF24L01_rtx, TX_ADDR, buf, 5 );			//写入5个字节的地址
+		NRF24L01_Read_Buf(NRF24L01_rtx, TX_ADDR, read_buf, 5 );		//读出写入的地址  
 		for( i = 0; i < 5; i++ )
 		{
 			if( buf[ i ] != read_buf[ i ] )
@@ -471,10 +470,10 @@ void NRF24L01_check( SPI_HandleTypeDef *hspi )
   * @note  :无
   * @retval:无
   */
-void RF24L01_Set_Mode(SPI_HandleTypeDef *hspi, nRf24l01ModeType Mode )
+void RF24L01_Set_Mode(NRF24L01_rtx_t *NRF24L01_rtx , nRf24l01ModeType Mode )
 {
     uint8_t controlreg = 0;
-	controlreg = NRF24L01_Read_Reg(hspi, CONFIG );
+	controlreg = NRF24L01_Read_Reg(NRF24L01_rtx, CONFIG );
 	
     if( Mode == MODE_TX )       
 	{
@@ -488,7 +487,7 @@ void RF24L01_Set_Mode(SPI_HandleTypeDef *hspi, nRf24l01ModeType Mode )
 		}
 	}
 
-    NRF24L01_Write_Reg(hspi, CONFIG, controlreg );
+    NRF24L01_Write_Reg(NRF24L01_rtx, CONFIG, controlreg );
 }
 
 /**
@@ -587,18 +586,18 @@ uint8_t NRF24L01_RxPacket(NRF24L01_rtx_t *NRF24L01_rtx, NRF24L01_bus_t *NRF24L01
   * @note  :无
   * @retval:无
   */
-void RF24L01_Init( SPI_HandleTypeDef *hspi )
+void RF24L01_Init( NRF24L01_rtx_t *NRF24L01_rtx )
 {
     uint8_t addr[5] = {INIT_ADDR};
 
     RF24L01_SET_CE_HIGH( );
-    NRF24L01_Clear_IRQ_Flag( hspi,IRQ_ALL );
+    NRF24L01_Clear_IRQ_Flag( NRF24L01_rtx,IRQ_ALL );
 #if DYNAMIC_PACKET == 1
 
-    NRF24L01_Write_Reg(hspi, DYNPD, ( 1 << 0 ) ); 	//使能通道1动态数据长度
-    NRF24L01_Write_Reg(hspi, FEATRUE, 0x07 );
-    NRF24L01_Read_Reg(hspi, DYNPD );
-    NRF24L01_Read_Reg(hspi, FEATRUE );
+    NRF24L01_Write_Reg(NRF24L01_rtx, DYNPD, ( 1 << 0 ) ); 	//使能通道1动态数据长度
+    NRF24L01_Write_Reg(NRF24L01_rtx, FEATRUE, 0x07 );
+    NRF24L01_Read_Reg(NRF24L01_rtx, DYNPD );
+    NRF24L01_Read_Reg(NRF24L01_rtx, FEATRUE );
 	
 #elif DYNAMIC_PACKET == 0
     
@@ -606,19 +605,19 @@ void RF24L01_Init( SPI_HandleTypeDef *hspi )
 	
 #endif	//DYNAMIC_PACKET
 
-    NRF24L01_Write_Reg(hspi, CONFIG, /*( 1<<MASK_RX_DR ) |*/		//接收中断
+    NRF24L01_Write_Reg(NRF24L01_rtx, CONFIG, /*( 1<<MASK_RX_DR ) |*/		//接收中断
                                       ( 1 << EN_CRC ) |     //使能CRC 1个字节
                                       ( 1 << PWR_UP ) );    //开启设备
-    NRF24L01_Write_Reg(hspi, EN_AA, ( 1 << ENAA_P0 ) );   		//通道0自动应答
-    NRF24L01_Write_Reg(hspi, EN_RXADDR, ( 1 << ERX_P0 ) );		//通道0接收
-    NRF24L01_Write_Reg(hspi, SETUP_AW, AW_5BYTES );     			//地址宽度 5个字节
-    NRF24L01_Write_Reg(hspi, SETUP_RETR, ARD_4000US |
+    NRF24L01_Write_Reg(NRF24L01_rtx, EN_AA, ( 1 << ENAA_P0 ) );   		//通道0自动应答
+    NRF24L01_Write_Reg(NRF24L01_rtx, EN_RXADDR, ( 1 << ERX_P0 ) );		//通道0接收
+    NRF24L01_Write_Reg(NRF24L01_rtx, SETUP_AW, AW_5BYTES );     			//地址宽度 5个字节
+    NRF24L01_Write_Reg(NRF24L01_rtx, SETUP_RETR, ARD_4000US |
                         ( REPEAT_CNT & 0x0F ) );         	//重复等待时间 250us
-    NRF24L01_Write_Reg(hspi, RF_CH, 60 );             			//初始化通道
-    NRF24L01_Write_Reg(hspi, RF_SETUP, 0x26 );
+    NRF24L01_Write_Reg(NRF24L01_rtx, RF_CH, 60 );             			//初始化通道
+    NRF24L01_Write_Reg(NRF24L01_rtx, RF_SETUP, 0x26 );
 
-    NRF24L01_Set_TxAddr(hspi, &addr[0], 5 );                      //设置TX地址
-    NRF24L01_Set_RxAddr(hspi, 0, &addr[0], 5 );                   //设置RX地址
+    NRF24L01_Set_TxAddr(NRF24L01_rtx, &addr[0], 5 );                      //设置TX地址
+    NRF24L01_Set_RxAddr(NRF24L01_rtx, 0, &addr[0], 5 );                   //设置RX地址
 }
 
 static uint8_t NRF24L01_RT(void* handle,uint8_t TxByte)
